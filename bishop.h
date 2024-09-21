@@ -18,7 +18,7 @@ public:
     for (int col = (int)letter - 1, row = number - 1; col >= 97 && row >= 1;
          col--, row--) {
       // down left
-      // makes notation like Be3>Bf2>Bg<
+      // makes notation in the form Be3>Bf2>Bg<
       output += 'B';
       output += (char)col; //(char)col will be a lowercase letter a through h
                            //representing the file

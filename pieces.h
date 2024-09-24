@@ -32,6 +32,12 @@ bool onBoard(int let,int num) {//is the position on the board
     number=num+1;
   }
 
+  void move(int row, int col) {
+    letter=(char)(col+97);
+    number=row+1;
+    hasMoved=true;
+  }
+
   void move(char let, int num) {//move the internal position of the piece and flip hasMoved
     letter = let;
     number = num;
@@ -46,7 +52,7 @@ bool onBoard(int let,int num) {//is the position on the board
 
   bool getHasMoved() { return hasMoved; }
 
-  void setHasMoved(bool in) {hasMoved=in;}
+  virtual void setHasMoved(bool in) {hasMoved=in;}
 
   virtual bool isEmpty() { return true; }
 

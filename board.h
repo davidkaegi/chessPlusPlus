@@ -8,6 +8,7 @@
 #include "pawn.h"
 #include "queen.h"
 #include "rook.h"
+#include <vector>
 using namespace std;
 
 class Board {
@@ -124,6 +125,10 @@ public:
   bool endGame() { // should the game end?
     if (isMate() == true || insuffMatl() == true)
       return true;
+    else if (fiftyMove==0)
+      return true;
+    else if (threefold()==true)
+      return true;
     else
       return false;
   }
@@ -131,8 +136,7 @@ public:
   bool getTurn() { return turn; }
 
   void changeTurn() {
-    if (turn==true) turn=false;
-    else turn=true;
+    turn = flip(turn);
   }
 
   bool insuffMatl() { // is it draw by insufficient material?
@@ -431,7 +435,7 @@ public:
     return squareAttacked(kingpos, other);
   }
 
-  bool squareAttacked(const string &pos,
+   bool squareAttacked(const string &pos,
                       bool colour) { // is this square attacked by this colour?
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
@@ -572,6 +576,8 @@ public:
         'O') { // castling is already tested to not put the king in check
       castle(target[1]);
       lastMove = 'x';
+      savePosition();
+      fiftyMove--;
       return true;
     }
     int row_tgt = numInt(target[1]), col_tgt = letInt(target[0]);
@@ -643,6 +649,13 @@ public:
       square[row_piece][col_piece]->move(
           toAN(col_tgt, row_tgt)); // tells the piece object where it moved to
       // shuffles around pointers to relflect the new board state
+      if (square[row_tgt][col_tgt]->isEmpty()==false) {
+        fiftyMove=50;//resets the fifty move rule counter
+      }
+      else if (square[row_piece][col_piece]->getType()=='P') {
+        fiftyMove=50;
+      }
+      else fiftyMove--;
       delete square[row_tgt][col_tgt]; // that piece object is no longer
                                        // relevant
       square[row_tgt][col_tgt] =
@@ -660,6 +673,7 @@ public:
       else
         lastMove = 'x'; // the window for enpassant expires after one turn
       turn = flip(turn);
+      savePosition();
       return 1;
     } else { // king is in check after move, don't proceed
       cout << "Illegal Move, king is in check after it\n";
@@ -747,6 +761,35 @@ public:
     return result;
   }
 
+Piece *getSquare(int row,int col) {
+  return square[row][col];
+}
+
+virtual void savePosition() {}//this is just here so that move can call it
+
+int getFiftyMove() {return fiftyMove;}
+
+bool threefold() {
+  int copy=0;
+  bool soFarSoGood;
+  for (int i=1;i<=50-fiftyMove;i++) {
+    soFarSoGood=true;
+    for (int row=0;row<8;row++) {
+      for (int col=0;col<8;col++) {
+        if (pieces[(l-1)%100][row][col]!=pieces[(l-1-i)%100][row][col])
+          {
+            soFarSoGood=false;
+          }
+      }
+    }
+    if (soFarSoGood==true) copy++;
+    if (copy==2) {
+      return true;
+    }
+  }
+  return false;
+}
+
 protected:
   Piece *square[8][8];
   bool turn; // 0=white,1=black
@@ -757,5 +800,13 @@ protected:
   char bComb = 'x';
   char nComb = 'x';
   char qComb = 'x';
+  int fiftyMove=50;
+  char pieces[100][8][8];
+  bool colours[100][8][8];
+  bool moved[100][8][8];
+  char lMove[100];
+  int pastDepth[100];
+  float pastCutoff[100];
+  int l=0;
 };
 #endif

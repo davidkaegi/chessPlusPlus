@@ -14,10 +14,13 @@ Pieces on the board are represented as follows:
 What is Fairy Chess?
 In this game, fairy chess pieces are combinations of 2 preexisting chess pieces. When fairy chess is Enabled, Rooks, Bishop, Knights, Queens will become fairy pieces.
 
-
-
-
-
-
-
--allow non-pawn moves engine
+Commands can be entered in place of moves:
+/resign (self explanatory)
+/undo (reverts the board back a number of moves as specified)
+/on (turns on the engine)
+/off (turns off the engine)
+/onemove (the engine generates one move)
+/ssetdepth (sets the maximum depth of the engine)
+/setcutoff (sets the cutoff which the engine uses internally to
+           decide whether or not to continue calculating a line)
+/printall (print the position stored inside of all pieces for debugging)

@@ -49,6 +49,11 @@ Fairy(char let=' ',int num=0,bool col=0,char tp1=' ',char tp2=' ') : Piece (let,
 char getType() {return type;}
 bool isEmpty() { return false; }
 
+void setHasMoved(bool in) {
+  sub1->setHasMoved(in);
+  sub2->setHasMoved(in);
+}
+
 string allMoves() {
   //fairy pieces combine moves by adding allMoves() of two piece objects
   sub1->move(letter,number);//update the sub pieces' positions before moving

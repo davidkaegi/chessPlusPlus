@@ -1,0 +1,24 @@
+Goal: Speed up engine. {
+
+-checkCastle() seems inefficient, check whether squares are attacked at the same time
+as to not have to regenerate moves (not super important)
+
+-Think about more ideas to improve pruning
+}
+
+The engine now stop one move shallower if that last move is not a capture.
+This is intended to balance out odd/even depths, where one colour thinks
+it gets a free piece on its last turn.
+
+
+Fix push random a-pawnitis (mostly fine now)
+
+engine depth not high enough-makes middlegame blunders
+
+perhaps let the engine fully calculate capture lines
+(maybe: a bool that says don't quit when at max depth)
+-Attempted implementation gets depths that seem too big
+-When limiting, got smoked by wally
+
+-Engine doesn't avoid/delay checkmate in certain scenarios
+(may be related to cutoffs)

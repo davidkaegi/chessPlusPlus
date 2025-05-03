@@ -479,8 +479,9 @@ public:
     while (isNumber(input[i]) == false &&
            i >= 1) // a number on 0 is an invalid move, so stop at 1
       i--;
-    int row_st = 0, row_end = 8, col_st = 0,
-        col_end = 8; // start and end row/columns for search later on
+    int row_st = 0, row_end = 8;
+    int col_st = 0, col_end = 8; 
+    // start and end row/columns for search later on
     if (i >= 2) {
       // this section deals with notation like Red1 or R1d1 where multiple
       // pieces can move to the square it does so by restricting the

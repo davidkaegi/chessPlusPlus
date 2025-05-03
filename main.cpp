@@ -15,7 +15,7 @@ void output20x(T a) {
 int main() {
   char fairy,bot;
   bool type=0;//is it fairy?
-  int depth=5;
+  int depth=4;
   float cutoff=1.5;
   cout<<"Welcome to Chess\n";
   output20x('-');
@@ -32,7 +32,7 @@ int main() {
     output20x('-');
     board.setMaxDepth(2);//fairy chess has more possible moves to consider, so the engine runs slower
   }
-  board.setMaxDepth(5);// default is 5
+  else board.setMaxDepth(4);// default is 4
   char colour='W';
   if (bot=='Y') {
     cout<<"Which colour would you like to play as (W/B): ";
@@ -52,7 +52,7 @@ int main() {
     cout<<"Enter move: ";
     cin>>move;
     if (move[0]=='/') {//commands
-      if (move=="/resign") {
+      if (move=="/resign"||move=="/r") {
         if (board.getTurn()==false) cout<<"Black ";
         else cout<<"White ";
         cout<<"wins by resignation\n";
@@ -68,13 +68,13 @@ int main() {
       else if (move=="/onemove") {
         x=0;
         board.engineMove();
-        if (x<10000) {
+        if (x<5000) {
           depth+=1;
           board.setMaxDepth(depth);
           cutoff+=0.2;
           board.setCutoff(cutoff);
         }
-        else if (x>200000) {
+        else if (x>100000) {
           depth-=1;
           board.setMaxDepth(depth);
           cutoff-=0.1;
@@ -105,13 +105,13 @@ int main() {
         if (bot=='Y') {
           x=0;
           board.engineMove();
-          if (x<15000) {
+          if (x<5000) {
             depth+=1;
             board.setMaxDepth(depth);
             cutoff+=0.2;
             board.setCutoff(cutoff);
           }
-          else if (x>205000) {
+          else if (x>100000) {
             depth-=1;
             board.setMaxDepth(depth);
             cutoff-=0.1;

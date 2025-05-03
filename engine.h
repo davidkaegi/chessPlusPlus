@@ -1,7 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 #include "board.h"
-#include <unordered_map>
+#include <map>
 using namespace std;
 
 int x=0;
@@ -106,7 +106,8 @@ public:
   }
 
   float engineMove(string seq="") { // type double, not void because depth!=0 iterations return the best evaluation
-  if (depth==maxDepth) return runningEval;
+  if (depth==maxDepth*2) return runningEval;
+  //depth can exceed maxdepth using captures and promotion
   if (depth==0) runningEval=evaluate();
   if (depth>=5) {
     if (seq.substr((depth-1)*4,8)==seq.substr((depth-5)*4,8)) {
@@ -134,6 +135,8 @@ public:
     int rowTgt, colTgt;
     Piece *taken,*passant;
     bool oldHasMoved;
+    bool pawnCont=false;
+    bool pawnSkip=false;
     float bestEval,result;
     char oldLastMove;
     char newLastMove='x';
@@ -157,19 +160,15 @@ public:
             //list of all legal moves this turn
             l=move.length();
             for (i=0;i<l;i+=4) {
+              pawnCont=false;
+              pawnSkip=false;
               rowTgt=(int)(move[i+2])-49;
               colTgt=(int)(move[i+1])-97;
               oldLastMove=lastMove;
               if (move[i+3]=='O') {
+                if (turn==false) runningEval += 0.6-depth/16.0;
+                else runningEval-=0.6-depth/16.0;
                 castle(move[i + 2]);
-                if (move[i + 2] == '>') {
-                  if (turn==false) runningEval += 0.8-depth/16; // I think shortcastle is easier to play than longcastle
-                  else runningEval-=0.9-depth/16;
-                }
-                else {
-                  if (turn==false) runningEval += 0.7-depth/16; // the engine has limitations, so short is incentivized more
-                  else runningEval-=0.7-depth/16;
-                }
                 depth++;
                 lastMove = 'x';
                 if (depth>=maxDepth-1)
@@ -195,6 +194,41 @@ public:
                   else return -100+depth;
                 }
                 square[rowTgt][colTgt]=here;
+                if (move[i]=='P') {
+                  if (move[i+3]=='!') {
+                    passant=square[row][colTgt];
+                    square[row][colTgt]=new Piece;
+                    pawnCont=true;
+                  }
+                  else if (move[i+3]=='|'&&oldHasMoved==false) {
+                    if (turn==false) runningEval+=0.1;
+                    else runningEval-=0.1;
+                    lastMove=move[i+1];
+                  }
+                  else if (rowTgt==7||rowTgt==0) {
+                    pawnCont=true;
+                    //promotion; the fairy acts as a normal queen when fairy chess is disabled
+                    //the engine will always choose to promote to queen
+                    square[rowTgt][colTgt]=new Fairy((char)(colTgt + 97), rowTgt + 1, turn, 'Q', qComb);
+                    if (turn==false) runningEval+=7.4;
+                    else runningEval-=7.4;
+                  }
+                  /*
+                  this was probably a bad idea
+                  else if (depth>1) {
+                    pawnSkip=true;
+                    //stops checking seemingly pointless pawn moves after a point
+                  }
+                  */
+                  else if (move[i+3]=='|'&&oldHasMoved==false) {
+                    if (turn==false) runningEval+=0.1;
+                    else runningEval-=0.1;
+                    lastMove=move[i+1];
+                  }
+                  //incentive to move pawns
+                  if (turn==false) runningEval+=0.1;
+                  else runningEval-=0.1;
+                }
                 if (here->getType()=='B'||here->getType()=='N') {
                   if (here->getHasMoved()==false) {
                     if (turn==false) runningEval+=0.4-depth/64;
@@ -212,28 +246,6 @@ public:
                 }
                 here->move(move.substr(i+1,2));
                 square[row][col]=new Piece;
-                if (move[i]=='P') {
-                  //incentive to move pawns
-                  if (turn==false) runningEval+=0.1;
-                  else runningEval-=0.1;
-                  if (move[i+3]=='!') {
-                    passant=square[row][colTgt];
-                    square[row][colTgt]=new Piece;
-                  }
-                  else if (move[i+3]=='|'&&oldHasMoved==false) {
-                    if (turn==false) runningEval+=0.1;
-                    else runningEval-=0.1;
-                    lastMove=move[i+1];
-                  }
-                  else if (rowTgt==7||rowTgt==0) {
-                    //promotion; the fairy acts as a normal queen when fairy chess is disabled
-                    //the engine will always choose to promote to queen
-                    square[rowTgt][colTgt]=new Fairy((char)(colTgt + 97), rowTgt + 1, turn, 'Q', qComb);
-                    if (turn==false) runningEval+=7.4;
-                    else runningEval-=7.4;
-                  }
-                }
-                //moves on to the next layer
                 if (turn==false) runningEval+=m[taken->getType()];
                 else runningEval-=m[taken->getType()];
                 if (rowTgt==3||rowTgt==4) {
@@ -247,15 +259,18 @@ public:
                     //incentive to control the centre
                   }
                 }
+                //moves on to the next layer
                 depth++;
                 turn=flip(turn);
                 //the engine stops searching one move early to
                 //avoid one side from thinking it gets a free capture at
                 //max depth
-                if (depth>=maxDepth-1&&taken->isEmpty()==true)
+                if (depth>=maxDepth&&(taken->isEmpty()==true&&pawnCont==false))
                   result=runningEval;
-                else
+                else if (pawnSkip==true);//do nothing
+                else {
                   result=engineMove(seq+move.substr(i,4));
+                }
                 turn=flip(turn);
                 depth--;
                 runningEval=pastEval[depth];
@@ -273,13 +288,23 @@ public:
                 square[rowTgt][colTgt]=taken;
                 here->setHasMoved(oldHasMoved);
               }
+
+              //debugging
+
+
+
+              //if (depth==0) cout<<move.substr(i,4)<<' '<<result<<endl;
+
+
+
+              //^^^^^^^^^
               if (turn==false) {//white wants to maximize
                 if (result>bestEval) {
                   if (depth>=2) {
                     if (result>pastEval[depth-1]+cutoff) {
                       return result;
                     }
-                    //if the move the other colour is refutable, why bother check other moves
+                    //if the move the other colour is refutable, why bother checking other moves
                   }
                   //steps to remember which move
                   bestEval=result;
@@ -329,7 +354,6 @@ public:
         if ((char)(rowEnd+49)=='<') cout<<"Long Castle\n";
         else cout<<"Short Castle\n";
         castle((char)(rowEnd+49));
-        turn=flip(turn);
         fiftyMove--;
       }
       else {
@@ -447,9 +471,11 @@ void undo(int n) {//goes back n board states, cannot go back more than 99
 protected:
   int depth;
   int maxDepth;
-  float pastEval[10];
+  float pastEval[100];//it is impossible (theoretically) for the engine to
+  //reach a depth near 100 through captures or other moves that bypass max depth
   float runningEval;
-  unordered_map<char,float> m;
+  map<char,float> m;//I think that this stores the piece values (pawn = 1, queen = 9, etc.) (retroactive comment)
+  //naming it "m" was really stupid but I can't be bothered to changeit and track down where it is used
   float cutoff=1.5;
   bool refutable=false;
   int prev50move[100];
